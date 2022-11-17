@@ -1,0 +1,26 @@
+.title {
+  text-align: center;
+}
+
+.pages {
+  text-align: center;
+}
+
+.page-content {
+  margin: 1rem;
+}
+
+.page-button {
+  text-decoration: none;
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 1px solid black;
+}
+
+.page-button:hover {
+  background-color: darkgray;
+}
+
+.page-button:active {
+  background-color: darkgray;
+}

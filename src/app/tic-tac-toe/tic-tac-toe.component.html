@@ -1,0 +1,12 @@
+<table class="tic-tac-toe-board">
+  <tbody>
+    <tr *ngFor="let row of board; let i = index">
+      <td
+        *ngFor="let column of row; let j = index"
+        [ngClass]="board[i][j] === 'O' ? 'o-text' : board[i][j] === 'X' ? 'x-text' : ''"
+        id="{{i}}_{{j}}"
+        (click)="onCellClick($event)"
+      >{{ board[i][j] }}</td>
+    </tr>
+  </tbody>
+</table>

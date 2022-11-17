@@ -1,0 +1,37 @@
+:host {
+  --border-color: black;
+  --text-color: black;
+  --light-box-shadow-color: #00D2FF;
+  --dark-box-shadow-color: #3A47D5;
+}
+
+.tic-tac-toe-board {
+  margin-left: auto;
+  margin-right: auto;
+  font-family: arial, sans-serif;
+  border-spacing: 0;
+  border-collapse: separate;
+}
+
+.tic-tac-toe-board tr td {
+  background-color: #34495e;
+  border: 1px solid var(--border-color);
+  height: 10rem;
+  width: 10rem;
+  border-radius: 0.25rem;
+
+  font-size: 8rem;
+  text-align: center;
+}
+
+.o-text {
+  color: green;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.x-text {
+  color: red;
+  font-size: 2rem;
+  font-weight: bold;
+}
