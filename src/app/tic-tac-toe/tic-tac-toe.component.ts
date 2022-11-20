@@ -175,13 +175,16 @@ export class TicTacToeComponent implements OnInit {
    * @param board - board containing the current moves as strings
    * @returns all available moves for the board
    */
-  private getAvailableMoves(board: string[][]): string[] {
+  private getAvailableMoves(board: string[][]): {y: number, x: number}[] {
     const moves = [];
 
     for(let i=0; i<board.length; i++) {
       for(let j=0; j<board[i].length; j++) {
         if(board[i][j] !== "O" && board[i][j] !== "X") {
-          moves.push(i.toString() + "_" + j.toString());
+          moves.push({
+            y: i,
+            x: j
+          });
         }
       }
     }
@@ -212,6 +215,9 @@ export class TicTacToeComponent implements OnInit {
 
     const newBoard = board;
     const moves = [];
+    let bestMove = 0;
+    let bestScore = 0;
+
     for(let i=0; i<availMoves.length; i++) {
       let move = {
         index: -1,
@@ -220,23 +226,22 @@ export class TicTacToeComponent implements OnInit {
       };
       move.index = i;
 
-      const currentMove = availMoves[i].split("_");
-      const y = parseInt(currentMove[0]);
-      const x = parseInt(currentMove[1]);
+      const y = availMoves[i].y;
+      const x = availMoves[i].x;
+      const currentMove = { y:y, x:x };
       move.coordinate.y = y;
       move.coordinate.x = x;
       newBoard[y][x] = isXPlayer ? "X" : "O";
 
-      const minimaxVal = this.getMinimaxMove(newBoard, move.index, isXPlayer ? "X" : "O", {y: y, x: x}, !isXPlayer);
+      const minimaxVal = this.getMinimaxMove(newBoard, move.index, isXPlayer ? "X" : "O", currentMove, !isXPlayer);
       move.score = minimaxVal.score;
       
       newBoard[y][x] = "";
       moves.push(move);
     }
 
-    let bestMove = 0;
     if(isXPlayer) {
-      let bestScore = Number.POSITIVE_INFINITY;
+      bestScore = Number.POSITIVE_INFINITY;
       for(let i=0; i<moves.length; i++) {
         if(moves[i].score < bestScore) {
           bestScore = moves[i].score;
@@ -245,7 +250,7 @@ export class TicTacToeComponent implements OnInit {
       }
     }
     else {
-      let bestScore = Number.NEGATIVE_INFINITY;
+      bestScore = Number.NEGATIVE_INFINITY;
       for(let i=0; i<moves.length; i++) {
         if(moves[i].score > bestScore) {
           bestScore = moves[i].score;
