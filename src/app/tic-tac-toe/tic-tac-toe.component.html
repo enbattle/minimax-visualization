@@ -1,12 +1,24 @@
-<table class="tic-tac-toe-board">
-  <tbody>
-    <tr *ngFor="let row of board; let i = index">
-      <td
-        *ngFor="let column of row; let j = index"
-        [ngClass]="board[i][j] === 'O' ? 'o-text' : board[i][j] === 'X' ? 'x-text' : ''"
-        id="{{i}}_{{j}}"
-        (click)="onCellClick($event)"
-      >{{ board[i][j] }}</td>
-    </tr>
-  </tbody>
-</table>
+<div class="tic-tac-toe">
+  <h1 class="game-title">Tic Tac Toe</h1>
+  <h4 class="game-subtitle">
+    The simplest of games using the minimax algorithm.
+  </h4>
+  <div *ngIf="message" class="game-message">{{ message }}</div>
+  <div class="game-board">
+    <div class="game-row" *ngFor="let row of board; let i = index">
+      <div
+        class="game-cell"
+        *ngFor="let cell of row; let j = index"
+        (click)="handleClick(i, j)"
+      >
+        {{ cell }}
+      </div>
+    </div>
+  </div>
+  <div *ngIf="currentPlayer === aiPlayer" class="game-thinking">
+    The computer is thinking...
+  </div>
+  <div>
+    <button class="game-button" (click)="resetGame()">Reset Game</button>
+  </div>
+</div>

@@ -1,37 +1,68 @@
-:host {
-  --border-color: black;
-  --text-color: black;
-  --light-box-shadow-color: #00D2FF;
-  --dark-box-shadow-color: #3A47D5;
-}
-
-.tic-tac-toe-board {
-  margin-left: auto;
-  margin-right: auto;
-  font-family: arial, sans-serif;
-  border-spacing: 0;
-  border-collapse: separate;
-}
-
-.tic-tac-toe-board tr td {
-  background-color: #34495e;
-  border: 1px solid var(--border-color);
-  height: 10rem;
-  width: 10rem;
-  border-radius: 0.25rem;
-
-  font-size: 8rem;
+.tic-tac-toe {
   text-align: center;
 }
 
-.o-text {
-  color: green;
-  font-size: 2rem;
+.game-board {
+  display: inline-block;
+  border: 3px solid #333;
+  margin: 20px auto;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  background: #f9f9f9;
+}
+
+.game-row {
+  display: flex;
+}
+
+.game-cell {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #333;
+  font-size: 36px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.game-cell:hover {
+  background: #ddd;
+}
+
+.game-message {
+  color: #ffffff;
+  margin: 20px 0;
+  font-size: 24px;
   font-weight: bold;
 }
 
-.x-text {
-  color: red;
-  font-size: 2rem;
-  font-weight: bold;
+.game-title {
+  color: #ffffff;
+}
+
+.game-subtitle {
+  color: #ffffff;
+}
+
+.game-thinking {
+  margin-top: 10px;
+  font-size: 18px;
+  color: #888;
+}
+
+.game-button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
+  background: #333;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.game-button:hover {
+  background: #555;
 }

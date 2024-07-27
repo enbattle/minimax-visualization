@@ -1,12 +1,22 @@
-<table class="connect-five-board">
-  <tbody>
-    <tr *ngFor="let row of board; let i = index">
-      <td
-        *ngFor="let column of row; let j = index"
-        [ngClass]="board[i][j] === 'O' ? 'o-text' : board[i][j] === 'X' ? 'x-text' : ''"
-        id="{{i}}_{{j}}"
-        (click)="onCellClick($event)"
-      >{{ board[i][j] }}</td>
-    </tr>
-  </tbody>
-</table>
+<div class="game-container">
+  <h1 class="game-title">Gomoku (Connect-five)</h1>
+  <h4 class="game-subtitle">
+    Note: this is simply a visualization of minimax algorithms, alpha-beta
+    pruning, as well as other similar algorithms in an effort to increase
+    performance. To maximize game quality and performance, the use of AI and
+    reinforcement learning would be best but none of that was used.
+  </h4>
+  <div class="game-board">
+    <div class="game-row" *ngFor="let row of board; let rowIndex = index">
+      <div
+        class="game-cell"
+        *ngFor="let cell of row; let colIndex = index"
+        [class]="getCellClass(rowIndex, colIndex)"
+        (click)="makeMove(rowIndex, colIndex)"
+      ></div>
+    </div>
+  </div>
+  <p *ngIf="winner" class="game-winner">{{ winner }} wins!</p>
+  <p *ngIf="isThinking" class="game-thinking">Computer is thinking...</p>
+  <button (click)="resetGame()" class="game-button">Reset Game</button>
+</div>

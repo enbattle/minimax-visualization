@@ -1,258 +1,430 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+
+// @Component({
+//   selector: 'app-connect-five',
+//   templateUrl: './connect-five.component.html',
+//   styleUrls: ['./connect-five.component.css'],
+// })
 
 @Component({
   selector: 'app-connect-five',
   templateUrl: './connect-five.component.html',
-  styleUrls: ['./connect-five.component.css']
+  styleUrls: ['./connect-five.component.css'],
 })
 export class ConnectFiveComponent implements OnInit {
-  rows: number = 15;
-  columns: number = 15;
-  winningSequence: number = 5;
+  board: (string | null)[][];
+  currentPlayer: string;
+  winner: string | null;
+  maxDepth: number;
+  isThinking: boolean;
+  highlightedCells: { row: number; col: number }[];
 
-  board: string[][] = [];
-  isX: boolean = Math.random() < 0.5 ? true : false;
-
-  playerMove: {y: number, x: number} = {y: -1, x: -1};
-  opponentMove: {y: number, x: number} = {y: -1, x: -1};
-  totalMoves: number = 0;
-  hasWinner: boolean = false;
-
-  constructor() { }
+  constructor(private cdr: ChangeDetectorRef) {
+    this.maxDepth = 3; // Initial depth limit
+    this.isThinking = false;
+    this.board = Array(15)
+      .fill(null)
+      .map(() => Array(15).fill(null));
+    this.currentPlayer = 'black';
+    this.winner = null;
+    this.highlightedCells = [];
+  }
 
   ngOnInit(): void {
-    // Create board on init
-    for(let i=0; i<this.rows * this.columns; i++) {
-      if(i % this.rows === 0) {
-        this.board.push([]);
+    this.resetGame();
+  }
+
+  /**
+   * Resets the game to its initial state.
+   */
+  resetGame(): void {
+    this.board = Array(15)
+      .fill(null)
+      .map(() => Array(15).fill(null));
+    this.currentPlayer = 'black';
+    this.winner = null;
+    this.isThinking = false;
+    this.highlightedCells = [];
+    this.clearHighlights();
+  }
+
+  /**
+   * Returns the class name for the cell at the given position.
+   */
+  getCellClass(row: number, col: number): string | null {
+    let cellClass = this.board[row][col];
+    if (
+      this.highlightedCells.some((cell) => cell.row === row && cell.col === col)
+    ) {
+      cellClass += ' highlight';
+    }
+    return cellClass;
+  }
+
+  /**
+   * Handles the player's move.
+   */
+  makeMove(row: number, col: number): void {
+    if (this.board[row][col] || this.winner || this.isThinking) {
+      return;
+    }
+    this.board[row][col] = this.currentPlayer;
+    if (this.checkWin(row, col)) {
+      this.winner = this.currentPlayer;
+    } else {
+      this.currentPlayer = this.currentPlayer === 'black' ? 'white' : 'black';
+      if (this.currentPlayer === 'white') {
+        this.computerMove();
       }
-      this.board[this.board.length - 1].push("");
     }
   }
 
   /**
-   * When a cell is clicked on the board, determine is there is a winner
-   * The other player (computer) will go after the user goes
-   * 
-   * @param event - click event for a cell on the board
+   * Handles the computer's move using the minimax algorithm.
    */
-  public onCellClick(event: any) : void {
-    if(!this.hasWinner) {
-      const boardCoordinate = event.target.id.split("_");
-      const y = parseInt(boardCoordinate[0]);
-      const x = parseInt(boardCoordinate[1]);
+  async computerMove(): Promise<void> {
+    this.isThinking = true;
+    this.clearHighlights();
+    let bestScore = -Infinity;
+    let move: { row: number; col: number } | undefined;
+    let possibleMoves = this.getPossibleMoves(this.board);
 
-      if(this.board[y][x] === "") {
-        const label = this.board[y][x] = this.isX ? "X" : "O";
-        this.playerMove.y = y;
-        this.playerMove.x = x;
-        this.totalMoves++;
+    // Iterative deepening with a time limit
+    const startTime = performance.now();
+    let timeLimit = 3000; // 3 seconds time limit
 
-        if(this.checkWin(label, this.playerMove)) {
-          this.hasWinner = true;
-          alert("Player " + label + " is the winner!");
-        } 
-        else if(!this.hasWinner && this.totalMoves === this.rows * this.columns) {
-          alert("Tie. No player wins!");
+    for (let depth = 1; depth <= this.maxDepth; depth++) {
+      for (let m of possibleMoves) {
+        this.highlightedCells.push(m); // Keep track of highlighted cells
+        this.highlightCell(m.row, m.col); // Highlight the current move being considered
+        await this.delay(1); // Wait for 50ms to visualize the process faster
+        this.board[m.row][m.col] = 'white';
+        let score = this.minimax(
+          this.board,
+          0,
+          false,
+          -Infinity,
+          Infinity,
+          depth
+        );
+        this.board[m.row][m.col] = null;
+        if (score > bestScore) {
+          bestScore = score;
+          move = m;
         }
-        else {
-          const opponentMove = this.getMinimaxMove(this.board, -1, label, this.playerMove, !this.isX);
-          const opponentY = opponentMove.coordinate.y;
-          const opponentX = opponentMove.coordinate.x;
-          const opponentLabel = this.board[opponentY][opponentX] = this.isX ? "O" : "X";
-          this.opponentMove.y = opponentY;
-          this.opponentMove.x = opponentX;
-          this.totalMoves++;
+      }
+      if (performance.now() - startTime > timeLimit) {
+        break; // Exit if time limit is reached
+      }
+    }
 
-          if(this.checkWin(opponentLabel, this.opponentMove)) {
-            this.hasWinner = true;
-            alert("Player " + opponentLabel + " is the winner!");
-          } 
-          else if(!this.hasWinner && this.totalMoves === this.rows * this.columns) {
-            alert("Tie. No player wins!");
+    if (move) {
+      this.board[move.row][move.col] = 'white';
+      if (this.checkWin(move.row, move.col)) {
+        this.winner = 'white';
+      }
+      this.currentPlayer = 'black';
+    }
+
+    this.clearHighlights(); // Clear the highlights after move
+    this.highlightedCells = []; // Clear the highlighted cells array
+    this.isThinking = false;
+    this.cdr.detectChanges(); // Trigger change detection
+  }
+
+  /**
+   * Delay function to create a pause.
+   */
+  delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Minimax algorithm with alpha-beta pruning.
+   */
+  minimax(
+    board: (string | null)[][],
+    depth: number,
+    isMaximizing: boolean,
+    alpha: number,
+    beta: number,
+    maxDepth: number
+  ): number {
+    if (this.checkWinCondition(board, 'white')) {
+      return 10 - depth;
+    }
+    if (this.checkWinCondition(board, 'black')) {
+      return depth - 10;
+    }
+    if (this.isBoardFull(board) || depth === maxDepth) {
+      return this.evaluateBoard(board);
+    }
+
+    if (isMaximizing) {
+      let bestScore = -Infinity;
+      let possibleMoves = this.getPossibleMoves(board);
+      for (let m of possibleMoves) {
+        board[m.row][m.col] = 'white';
+        let score = this.minimax(
+          board,
+          depth + 1,
+          false,
+          alpha,
+          beta,
+          maxDepth
+        );
+        board[m.row][m.col] = null;
+        bestScore = Math.max(score, bestScore);
+        alpha = Math.max(alpha, score);
+        if (beta <= alpha) {
+          break;
+        }
+      }
+      return bestScore;
+    } else {
+      let bestScore = Infinity;
+      let possibleMoves = this.getPossibleMoves(board);
+      for (let m of possibleMoves) {
+        board[m.row][m.col] = 'black';
+        let score = this.minimax(board, depth + 1, true, alpha, beta, maxDepth);
+        board[m.row][m.col] = null;
+        bestScore = Math.min(score, bestScore);
+        beta = Math.min(beta, score);
+        if (beta <= alpha) {
+          break;
+        }
+      }
+      return bestScore;
+    }
+  }
+
+  /**
+   * Evaluates the board and returns a score.
+   */
+  evaluateBoard(board: (string | null)[][]): number {
+    let score = 0;
+    score += this.evaluateLines(board, 'white');
+    score -= this.evaluateLines(board, 'black');
+    return score;
+  }
+
+  /**
+   * Evaluates lines for a specific player.
+   */
+  evaluateLines(board: (string | null)[][], player: string): number {
+    let score = 0;
+
+    // Check all rows
+    for (let i = 0; i < 15; i++) {
+      for (let j = 0; j <= 10; j++) {
+        score += this.evaluateLine(board, player, i, j, 0, 1);
+      }
+    }
+
+    // Check all columns
+    for (let i = 0; i <= 10; i++) {
+      for (let j = 0; j < 15; j++) {
+        score += this.evaluateLine(board, player, i, j, 1, 0);
+      }
+    }
+
+    // Check all diagonals (top-left to bottom-right)
+    for (let i = 0; i <= 10; i++) {
+      for (let j = 0; j <= 10; j++) {
+        score += this.evaluateLine(board, player, i, j, 1, 1);
+      }
+    }
+
+    // Check all diagonals (bottom-left to top-right)
+    for (let i = 4; i < 15; i++) {
+      for (let j = 0; j <= 10; j++) {
+        score += this.evaluateLine(board, player, i, j, -1, 1);
+      }
+    }
+
+    return score;
+  }
+
+  /**
+   * Evaluates a single line of 5 cells.
+   */
+  evaluateLine(
+    board: (string | null)[][],
+    player: string,
+    row: number,
+    col: number,
+    deltaX: number,
+    deltaY: number
+  ): number {
+    let count = 0;
+    let emptyCount = 0;
+
+    for (let i = 0; i < 5; i++) {
+      const currentRow = row + i * deltaX;
+      const currentCol = col + i * deltaY;
+
+      if (board[currentRow][currentCol] === player) {
+        count++;
+      } else if (board[currentRow][currentCol] === null) {
+        emptyCount++;
+      } else {
+        return 0;
+      }
+    }
+
+    if (count === 5) {
+      return 1000000;
+    } else if (count === 4 && emptyCount === 1) {
+      return 1000;
+    } else if (count === 3 && emptyCount === 2) {
+      return 100;
+    } else if (count === 2 && emptyCount === 3) {
+      return 10;
+    } else if (count === 1 && emptyCount === 4) {
+      return 1;
+    }
+
+    return 0;
+  }
+
+  /**
+   * Generates and orders possible moves based on heuristic evaluation.
+   */
+  getPossibleMoves(board: (string | null)[][]): { row: number; col: number }[] {
+    let moves: { row: number; col: number }[] = [];
+    for (let i = 0; i < 15; i++) {
+      for (let j = 0; j < 15; j++) {
+        if (board[i][j] === null) {
+          moves.push({ row: i, col: j });
+        }
+      }
+    }
+    // Order moves based on heuristic
+    moves.sort((a, b) => {
+      board[a.row][a.col] = 'white';
+      let scoreA = this.evaluateBoard(board);
+      board[a.row][a.col] = null;
+
+      board[b.row][b.col] = 'white';
+      let scoreB = this.evaluateBoard(board);
+      board[b.row][b.col] = null;
+
+      return scoreB - scoreA;
+    });
+    return moves;
+  }
+
+  /**
+   * Checks if the current player has won.
+   */
+  checkWin(row: number, col: number): boolean {
+    const player = this.board[row][col];
+    return (
+      player !== null &&
+      (this.checkDirection(row, col, player, 1, 0) ||
+        this.checkDirection(row, col, player, 0, 1) ||
+        this.checkDirection(row, col, player, 1, 1) ||
+        this.checkDirection(row, col, player, 1, -1))
+    );
+  }
+
+  /**
+   * Checks a specific direction for a win.
+   */
+  checkDirection(
+    row: number,
+    col: number,
+    player: string,
+    deltaX: number,
+    deltaY: number
+  ): boolean {
+    let count = 1;
+    for (let i = 1; i < 5; i++) {
+      const newRow = row + deltaX * i;
+      const newCol = col + deltaY * i;
+      if (
+        this.isValidPosition(newRow, newCol) &&
+        this.board[newRow][newCol] === player
+      ) {
+        count++;
+      } else {
+        break;
+      }
+    }
+    for (let i = 1; i < 5; i++) {
+      const newRow = row - deltaX * i;
+      const newCol = col - deltaY * i;
+      if (
+        this.isValidPosition(newRow, newCol) &&
+        this.board[newRow][newCol] === player
+      ) {
+        count++;
+      } else {
+        break;
+      }
+    }
+    return count >= 5;
+  }
+
+  /**
+   * Checks if the position is valid on the board.
+   */
+  isValidPosition(row: number, col: number): boolean {
+    return row >= 0 && row < 15 && col >= 0 && col < 15;
+  }
+
+  /**
+   * Checks if a specific player has won.
+   */
+  checkWinCondition(board: (string | null)[][], player: string): boolean {
+    for (let i = 0; i < 15; i++) {
+      for (let j = 0; j < 15; j++) {
+        if (board[i][j] === player) {
+          if (
+            this.checkDirection(i, j, player, 1, 0) ||
+            this.checkDirection(i, j, player, 0, 1) ||
+            this.checkDirection(i, j, player, 1, 1) ||
+            this.checkDirection(i, j, player, 1, -1)
+          ) {
+            return true;
           }
         }
       }
-    }
-  }
-
-  /**
-   * 
-   * @param label - indicates the "X" or "O" player (or computer)
-   * @param coordinate  - coordinates for the most recent move
-   * @returns boolean determining whether or not the player (or computer) has won the game
-   */
-  public checkWin(label: string, coordinate: {y: number, x: number}): boolean {
-    // Check Horizontal
-    let checkHorizontal = 1;
-    let horizontalX = coordinate.x-1;
-    while(horizontalX >= 0 && this.board[coordinate.y][horizontalX] === label) {
-      if(this.board[coordinate.y][horizontalX] === label) {
-        checkHorizontal++;
-      }
-      horizontalX--;
-    }
-    horizontalX = coordinate.x+1;
-    while(horizontalX <= this.columns-1 && this.board[coordinate.y][horizontalX] === label) {
-      if(this.board[coordinate.y][horizontalX] === label) {
-        checkHorizontal++;
-      }
-      horizontalX++;
-    }
-
-    // Check Vertical
-    let checkVertical = 1;
-    let horizontalY = coordinate.y-1;
-    while(horizontalY >= 0 && this.board[horizontalY][coordinate.x] === label) {
-      if(this.board[horizontalY][coordinate.x] === label) {
-        checkVertical++;
-      }
-      horizontalY--;
-    }
-    horizontalY = coordinate.y+1;
-    while(horizontalY <= this.rows-1 && this.board[horizontalY][coordinate.x] === label) {
-      if(this.board[horizontalY][coordinate.x] === label) {
-        checkVertical++;
-      }
-      horizontalY++;
-    }
-
-    // Check Diagonal
-    let checkDiagonal = 1;
-    horizontalY = coordinate.y-1;
-    horizontalX = coordinate.x-1;
-    while(horizontalY >= 0 && horizontalX >= 0 && this.board[horizontalY][horizontalX] === label) {
-      if(this.board[horizontalY][horizontalX] === label) {
-        checkDiagonal++;
-      }
-      horizontalY--;
-      horizontalX--;
-    }
-    horizontalY = coordinate.y+1;
-    horizontalX = coordinate.x+1;
-    while(horizontalY <= this.rows-1 && horizontalX-1 <= this.columns && this.board[horizontalY][horizontalX] === label) {
-      if(this.board[horizontalY][horizontalX] === label) {
-        checkDiagonal++;
-      }
-      horizontalY++;
-      horizontalX++;
-    }
-
-    // Check Anti-Diagonal
-    let checkAntiDiagonal = 1;
-    horizontalY = coordinate.y+1;
-    horizontalX = coordinate.x-1;
-    while(horizontalY <= this.rows-1 && horizontalX >= 0 && this.board[horizontalY][horizontalX] === label) {
-      if(this.board[horizontalY][horizontalX] === label) {
-        checkAntiDiagonal++;
-      }
-      horizontalY++;
-      horizontalX--;
-    }
-    horizontalY = coordinate.y-1;
-    horizontalX = coordinate.x+1;
-    while(horizontalY >= 0 && horizontalX <= this.columns-1 && this.board[horizontalY][horizontalX] === label) {
-      if(this.board[horizontalY][horizontalX] === label) {
-        checkAntiDiagonal++;
-      }
-      horizontalY--;
-      horizontalX++;
-    }
-
-    if(checkVertical === this.winningSequence
-      || checkHorizontal === this.winningSequence
-      || checkDiagonal === this.winningSequence
-      || checkAntiDiagonal === this.winningSequence
-    ) {
-      return true;
     }
     return false;
   }
 
   /**
-   * 
-   * @param board - board containing the current moves as strings
-   * @returns all available moves for the board
+   * Checks if the board is full.
    */
-  private getAvailableMoves(board: string[][]): string[] {
-    const moves = [];
-
-    for(let i=0; i<board.length; i++) {
-      for(let j=0; j<board[i].length; j++) {
-        if(board[i][j] !== "O" && board[i][j] !== "X") {
-          moves.push(i.toString() + "_" + j.toString());
+  isBoardFull(board: (string | null)[][]): boolean {
+    for (let i = 0; i < 15; i++) {
+      for (let j = 0; j < 15; j++) {
+        if (board[i][j] === null) {
+          return false;
         }
       }
     }
-
-    return moves;
+    return true;
   }
 
   /**
-   * 
-   * @param board - board containing current moves as strings
-   * @param moveIndex - index of the move in the list of available moves
-   * @param moveLabel - label of the move (either "X" or "O")
-   * @param moveCoordinate - x and y coordinates for move
-   * @param isXPlayer - determines player to check for min move or max move
-   * @returns best minimax move
+   * Highlights a cell at the given position.
    */
-  private getMinimaxMove(board: string[][], moveIndex: number, moveLabel: string, moveCoordinate: {y: number, x: number}, isXPlayer: boolean): 
-  { index: number, score: number, coordinate: {y: number, x: number} } {
-    if(this.checkWin(moveLabel, moveCoordinate)) {
-      return isXPlayer ? { index: moveIndex, score: 10, coordinate: moveCoordinate }
-      : { index: moveIndex, score: -10, coordinate: moveCoordinate };
+  highlightCell(row: number, col: number): void {
+    const cell = document.querySelector(
+      `.row:nth-child(${row + 1}) .cell:nth-child(${col + 1})`
+    );
+    if (cell) {
+      cell.classList.add('highlight');
     }
+  }
 
-    const availMoves = this.getAvailableMoves(board);
-    if(availMoves.length === 0) {
-      return { index: moveIndex, score: 0, coordinate: moveCoordinate};
-    }
-
-    const newBoard = board;
-    const moves = [];
-    for(let i=0; i<availMoves.length; i++) {
-      let move = {
-        index: -1,
-        score: 0,
-        coordinate: {y: -1, x: -1}
-      };
-      move.index = i;
-
-      const currentMove = availMoves[i].split("_");
-      const y = parseInt(currentMove[0]);
-      const x = parseInt(currentMove[1]);
-      move.coordinate.y = y;
-      move.coordinate.x = x;
-      newBoard[y][x] = isXPlayer ? "X" : "O";
-
-      const minimaxVal = this.getMinimaxMove(newBoard, move.index, isXPlayer ? "X" : "O", {y: y, x: x}, !isXPlayer);
-      move.score = minimaxVal.score;
-      
-      newBoard[y][x] = "";
-      moves.push(move);
-    }
-
-    let bestMove = 0;
-    if(isXPlayer) {
-      let bestScore = Number.POSITIVE_INFINITY;
-      for(let i=0; i<moves.length; i++) {
-        if(moves[i].score < bestScore) {
-          bestScore = moves[i].score;
-          bestMove = i;
-        }
-      }
-    }
-    else {
-      let bestScore = Number.NEGATIVE_INFINITY;
-      for(let i=0; i<moves.length; i++) {
-        if(moves[i].score > bestScore) {
-          bestScore = moves[i].score;
-          bestMove = i;
-        }
-      }
-    }
-
-    return moves[bestMove];
+  /**
+   * Clears all highlights from the board.
+   */
+  clearHighlights(): void {
+    const cells = document.querySelectorAll('.cell.highlight');
+    cells.forEach((cell) => cell.classList.remove('highlight'));
   }
 }

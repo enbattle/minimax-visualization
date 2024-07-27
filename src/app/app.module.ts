@@ -7,16 +7,9 @@ import { AppRoutingModule } from './app-routing.component';
 import { ConnectFiveComponent } from './connect-five/connect-five.component';
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    TicTacToeComponent,
-    ConnectFiveComponent
-  ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule
-  ],
+  declarations: [AppComponent, TicTacToeComponent, ConnectFiveComponent],
+  imports: [BrowserModule, AppRoutingModule],
   providers: [],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}

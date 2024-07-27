@@ -1,37 +1,88 @@
-:host {
-  --border-color: black;
-  --text-color: black;
-  --light-box-shadow-color: #00D2FF;
-  --dark-box-shadow-color: #3A47D5;
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
-.connect-five-board {
-  margin-left: auto;
-  margin-right: auto;
-  font-family: arial, sans-serif;
-  border-spacing: 0;
-  border-collapse: separate;
+.game-title {
+  color: #ffffff;
 }
 
-.connect-five-board tr td {
-  background-color: #34495e;
-  border: 1px solid var(--border-color);
-  height: 2rem;
-  width: 2rem;
-  border-radius: 0.25rem;
-
-  font-size: 1rem;
-  text-align: center;
+.game-subtitle {
+  color: #ffffff;
+  max-width: 30rem;
 }
 
-.o-text {
-  color: green;
-  font-size: 2rem;
-  font-weight: bold;
+.game-winner {
+  color: #ffffff;
 }
 
-.x-text {
-  color: red;
-  font-size: 2rem;
-  font-weight: bold;
+.game-board {
+  display: grid;
+  grid-template-rows: repeat(15, 40px);
+  grid-template-columns: repeat(15, 40px);
+  gap: 1px;
+  margin-bottom: 20px;
+}
+
+.game-row {
+  display: contents;
+}
+
+.game-cell {
+  width: 40px;
+  height: 40px;
+  background-color: lightgray;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease; /* Animation effect */
+}
+
+.game-cell.black {
+  background-color: black;
+}
+
+.game-cell.white {
+  background-color: white;
+}
+
+.game-cell.highlight {
+  background-color: yellow;
+}
+
+.game-button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
+  background: #333;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.game-button:hover {
+  background: #555;
+}
+
+.game-thinking {
+  margin-top: 10px;
+  font-size: 18px;
+  color: #888;
+}
+
+@keyframes fill {
+  from {
+    background-color: lightgray;
+  }
+  to {
+    background-color: yellow;
+  }
+}
+
+.game-cell.highlight {
+  animation: fill 0.1s forwards; /* Fill animation */
 }
