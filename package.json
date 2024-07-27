@@ -5,8 +5,11 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "lint": "ng lint",
+    "e2e": "ng e2e",
+    "predeploy": "ng build --configuration production --base-href=/minimax-visualization/",
+    "deploy": "gh-pages -d dist/minimax-visualization"
   },
   "private": true,
   "dependencies": {
